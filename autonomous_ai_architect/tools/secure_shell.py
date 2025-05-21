@@ -48,11 +48,11 @@ class SecureShellTool:
         Initialize the secure shell tool.
         
         Args:
-            container_name: Name for the container (default from config)
-            image_name: Docker image to use (default: python:3.12-slim)
-            socket_path: Path to Docker socket (default from config)
-            working_dir: Working directory for command execution
-            resource_limits: Resource limits for the container
+            container_name (Optional[str]): Name for the container (default from config)
+            image_name (str): Docker image to use (default: python:3.12-slim)
+            socket_path (Optional[str]): Path to Docker socket (default from config)
+            working_dir (Optional[Union[str, Path]]): Working directory for command execution
+            resource_limits (Optional[Dict[str, Any]]): Resource limits for the container
         """
         config = get_config()
         
@@ -151,13 +151,15 @@ class SecureShellTool:
         Run a shell command in the secure sandbox.
         
         Args:
-            command: The shell command to execute
-            timeout: Maximum execution time in seconds
-            capture_output: Whether to capture and return command output
+            command (str): The shell command to execute
+            timeout (int): Maximum execution time in seconds
+            capture_output (bool): Whether to capture and return command output
             
         Returns:
-            Dictionary with command execution results
+            Dict[str, Any]: Dictionary with command execution results
         """
+        logger.info(f"Entering run method with command: {command}")
+        
         # Ensure container is available
         self._ensure_container()
         
@@ -191,6 +193,7 @@ class SecureShellTool:
                 "duration_seconds": round(duration, 3)
             }
             
+            logger.info(f"Exiting run method with result: {result}")
             return result
             
         except Exception as e:
@@ -210,12 +213,14 @@ class SecureShellTool:
         Run Python code in the secure sandbox.
         
         Args:
-            code: The Python code to execute
-            timeout: Maximum execution time in seconds
+            code (str): The Python code to execute
+            timeout (int): Maximum execution time in seconds
             
         Returns:
-            Dictionary with code execution results
+            Dict[str, Any]: Dictionary with code execution results
         """
+        logger.info(f"Entering run_python method with code: {code}")
+        
         # Create a temporary file to hold the code
         with tempfile.NamedTemporaryFile(suffix=".py", mode="w", delete=False) as temp_file:
             temp_file.write(code)
@@ -236,6 +241,7 @@ class SecureShellTool:
             # Clean up the temporary file in the container
             self.container.exec_run(f"rm {dest_path}")
             
+            logger.info(f"Exiting run_python method with result: {result}")
             return result
             
         finally:
@@ -247,11 +253,13 @@ class SecureShellTool:
         Install a Python package in the sandbox.
         
         Args:
-            package_name: Name of the package to install
+            package_name (str): Name of the package to install
             
         Returns:
-            Dictionary with installation results
+            Dict[str, Any]: Dictionary with installation results
         """
+        logger.info(f"Entering install_package method with package_name: {package_name}")
+        
         # Sanitize the package name to prevent command injection
         if not all(c.isalnum() or c in "._-=<>+" for c in package_name):
             return {
@@ -264,10 +272,15 @@ class SecureShellTool:
             }
         
         # Install the package
-        return self.run(f"pip install --no-cache-dir {package_name}")
+        result = self.run(f"pip install --no-cache-dir {package_name}")
+        
+        logger.info(f"Exiting install_package method with result: {result}")
+        return result
     
     def cleanup(self) -> None:
         """Stop and remove the sandbox container."""
+        logger.info("Entering cleanup method")
+        
         if self.container:
             logger.info(f"Cleaning up sandbox container: {self.container_name}")
             try:
@@ -276,6 +289,8 @@ class SecureShellTool:
                 self.container = None
             except Exception as e:
                 logger.error(f"Error during container cleanup: {str(e)}")
+        
+        logger.info("Exiting cleanup method")
 
 class FileIOTool:
     """
@@ -290,7 +305,7 @@ class FileIOTool:
         Initialize the file I/O tool.
         
         Args:
-            base_dir: Base directory to restrict file operations to
+            base_dir (Optional[Union[str, Path]]): Base directory to restrict file operations to
         """
         self.base_dir = Path(base_dir) if base_dir else Path.cwd()
     
@@ -299,10 +314,10 @@ class FileIOTool:
         Validate that a file path is within the allowed base directory.
         
         Args:
-            file_path: The file path to validate
+            file_path (Union[str, Path]): The file path to validate
             
         Returns:
-            The absolute Path object if valid
+            Path: The absolute Path object if valid
             
         Raises:
             ValueError: If the path is outside the base directory
@@ -319,11 +334,11 @@ class FileIOTool:
         Read the contents of a file safely.
         
         Args:
-            file_path: Path to the file to read
-            binary: Whether to read in binary mode
+            file_path (Union[str, Path]): Path to the file to read
+            binary (bool): Whether to read in binary mode
             
         Returns:
-            The file contents (str or bytes depending on mode)
+            Union[str, bytes]: The file contents (str or bytes depending on mode)
             
         Raises:
             ValueError: If the path is outside the base directory
@@ -341,9 +356,9 @@ class FileIOTool:
         Write content to a file safely.
         
         Args:
-            file_path: Path to the file to write
-            content: Content to write to the file
-            binary: Whether to write in binary mode
+            file_path (Union[str, Path]): Path to the file to write
+            content (Union[str, bytes]): Content to write to the file
+            binary (bool): Whether to write in binary mode
             
         Raises:
             ValueError: If the path is outside the base directory
@@ -363,10 +378,10 @@ class FileIOTool:
         List the contents of a directory safely.
         
         Args:
-            dir_path: Path to the directory to list
+            dir_path (Union[str, Path]): Path to the directory to list
             
         Returns:
-            List of dictionaries with file information
+            List[Dict[str, Any]]: List of dictionaries with file information
             
         Raises:
             ValueError: If the path is outside the base directory

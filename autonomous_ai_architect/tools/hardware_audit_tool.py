@@ -51,9 +51,11 @@ class HardwareAuditTool(BaseTool):
         Returns:
             JSON string containing audit results
         """
+        logger.info("Starting hardware audit")
         try:
             if full_audit:
                 result = self.hardware_audit.run_full_audit()
+                logger.info("Full hardware audit completed successfully")
                 return json.dumps(result, indent=2)
             elif specific_component:
                 if specific_component == "cpu":
@@ -67,10 +69,13 @@ class HardwareAuditTool(BaseTool):
                 elif specific_component == "network":
                     result = self.hardware_audit.get_network_info()
                 else:
+                    logger.warning(f"Unknown component: {specific_component}")
                     return f"Unknown component: {specific_component}"
                     
+                logger.info(f"Audit for {specific_component} completed successfully")
                 return json.dumps(result, indent=2)
             else:
+                logger.warning("No audit type specified")
                 return "Please specify either full_audit=True or a specific_component"
         except Exception as e:
             logger.error(f"Hardware audit failed: {str(e)}")
@@ -83,9 +88,12 @@ class HardwareAuditTool(BaseTool):
         Returns:
             Dictionary with hardware information
         """
+        logger.info("Starting asynchronous hardware audit")
         try:
             # Run the audit synchronously since hardware operations are typically I/O bound
-            return self.hardware_audit.run_full_audit()
+            result = self.hardware_audit.run_full_audit()
+            logger.info("Asynchronous hardware audit completed successfully")
+            return result
         except Exception as e:
             logger.error(f"Failed to get hardware information: {str(e)}")
             return {"error": str(e)}

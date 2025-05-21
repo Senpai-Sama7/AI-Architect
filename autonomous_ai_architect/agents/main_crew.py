@@ -75,6 +75,7 @@ class BaseAgent(Agent):
             verbose: Whether to log detailed information
             allow_delegation: Whether the agent can delegate tasks
         """
+        logger.info(f"Initializing BaseAgent: {name}")
         self.redis_client = redis_client
         self.knowledge_base = knowledge_base
         self.shell_tool = shell_tool
@@ -96,6 +97,7 @@ class BaseAgent(Agent):
             tools=tools,
             allow_delegation=allow_delegation
         )
+        logger.info(f"BaseAgent initialized: {name}")
 
     async def run(self, task: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -120,7 +122,10 @@ class BaseAgent(Agent):
         Returns:
             LLM response as string
         """
-        return await route_request(prompt, **kwargs)
+        logger.info(f"Making LLM request with prompt: {prompt}")
+        response = await route_request(prompt, **kwargs)
+        logger.info(f"LLM request completed with response: {response}")
+        return response
 
 class ArchitectAgent(BaseAgent):
     """Agent responsible for high-level system design and architecture decisions."""
@@ -135,6 +140,7 @@ class ArchitectAgent(BaseAgent):
         Returns:
             Dictionary with architecture plan
         """
+        logger.info(f"ArchitectAgent running task: {task}")
         prompt = f"""
         As an AI Architecture Expert, analyze the following requirements and create 
         a comprehensive system architecture plan:
@@ -203,6 +209,7 @@ class HardwareAnalysisAgent(BaseAgent):
         Returns:
             Dictionary with hardware analysis results
         """
+        logger.info(f"HardwareAnalysisAgent running task: {task}")
         if not self.hardware_tool:
             return {
                 "error": "Hardware audit tool not available",
@@ -281,6 +288,7 @@ class CodeExecutionAgent(BaseAgent):
         Returns:
             Dictionary with execution results
         """
+        logger.info(f"CodeExecutionAgent running task: {task}")
         if not self.shell_tool:
             return {
                 "error": "Secure shell tool not available",
@@ -360,6 +368,7 @@ class KnowledgeAgent(BaseAgent):
         Returns:
             Dictionary with operation results
         """
+        logger.info(f"KnowledgeAgent running task: {task}")
         if not self.knowledge_base:
             return {
                 "error": "Knowledge base not available",
@@ -444,6 +453,7 @@ class AgentOrchestrator:
             redis_url: Redis connection URL
             knowledge_base: Optional knowledge base instance
         """
+        logger.info("Initializing AgentOrchestrator")
         self.redis_client = redis.from_url(redis_url)
         self.knowledge_base = knowledge_base
         
@@ -507,6 +517,7 @@ class AgentOrchestrator:
         Returns:
             Dictionary with task results
         """
+        logger.info(f"Processing task: {task}")
         task_type = task.get("type", "")
         
         if task_type == "architecture":
@@ -538,6 +549,7 @@ class AgentOrchestrator:
         Returns:
             Dictionary with results from all tasks
         """
+        logger.info(f"Creating crew with tasks: {tasks}")
         # Convert tasks to CrewAI Task objects
         crew_tasks = []
         
@@ -601,6 +613,7 @@ class AgentOrchestrator:
     
     async def close(self):
         """Clean up resources."""
+        logger.info("Closing AgentOrchestrator")
         await self.redis_client.close()
         
 # Example usage

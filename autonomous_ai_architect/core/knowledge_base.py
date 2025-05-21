@@ -107,6 +107,7 @@ class KnowledgeBase:
         Returns:
             True if initialization was successful
         """
+        logger.info("Initializing knowledge base")
         start_time = time.time()
         
         try:
@@ -145,6 +146,7 @@ class KnowledgeBase:
         Returns:
             List of chunk IDs created
         """
+        logger.info("Adding document to knowledge base")
         start_time = time.time()
         
         try:
@@ -228,6 +230,7 @@ class KnowledgeBase:
         Returns:
             List of search results with relevance scores
         """
+        logger.info("Searching knowledge base")
         start_time = time.time()
         
         try:
@@ -284,6 +287,7 @@ class KnowledgeBase:
         Returns:
             Document with metadata and text (if include_text is True)
         """
+        logger.info(f"Retrieving document with ID {document_id}")
         start_time = time.time()
         
         try:
@@ -338,6 +342,7 @@ class KnowledgeBase:
         Returns:
             True if deletion was successful
         """
+        logger.info(f"Deleting document with ID {document_id}")
         start_time = time.time()
         
         try:
@@ -381,6 +386,7 @@ class KnowledgeBase:
         Returns:
             List of chunk IDs created
         """
+        logger.info(f"Updating document with ID {document_id}")
         start_time = time.time()
         
         try:
@@ -452,6 +458,7 @@ class KnowledgeBase:
         Returns:
             List of documents with metadata
         """
+        logger.info("Listing documents in knowledge base")
         start_time = time.time()
         
         try:
@@ -513,6 +520,7 @@ class KnowledgeBase:
         Returns:
             List of document IDs added
         """
+        logger.info("Adding documents in batch to knowledge base")
         start_time = time.time()
         
         if len(documents) != len(metadatas):
@@ -589,7 +597,7 @@ class KnowledgeBase:
             if end < len(text) and not text[end].isspace():
                 # Look for next whitespace
                 next_space = text.find(" ", end)
-                if next_space != -1 and next_space - end < 50:  # Don't extend too far
+                if (next_space != -1 and next_space - end < 50):  # Don't extend too far
                     end = next_space
             
             # Extract the chunk

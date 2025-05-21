@@ -52,10 +52,10 @@ class EmbeddingGenerator:
         Initialize the embedding generator.
 
         Args:
-            model: The embedding model to use
-            api_key: OpenAI API key
-            batch_size: Maximum batch size for embedding generation
-            dimensions: Optional output dimensionality (if supported by model)
+            model (str): The embedding model to use
+            api_key (Optional[str]): OpenAI API key
+            batch_size (int): Maximum batch size for embedding generation
+            dimensions (Optional[int]): Optional output dimensionality (if supported by model)
         """
         self.model = model
         self.api_key = api_key
@@ -76,12 +76,13 @@ class EmbeddingGenerator:
         Generate embeddings for a list of texts.
 
         Args:
-            texts: List of text strings to embed
-            normalize: Whether to normalize the embeddings to unit length
+            texts (List[str]): List of text strings to embed
+            normalize (bool): Whether to normalize the embeddings to unit length
 
         Returns:
-            List of embedding vectors
+            List[List[float]]: List of embedding vectors
         """
+        logger.info("Entering get_embeddings method")
         if not texts:
             return []
             
@@ -120,11 +121,12 @@ class EmbeddingGenerator:
         Embed a batch of texts using the configured model.
 
         Args:
-            texts: List of text strings to embed
+            texts (List[str]): List of text strings to embed
 
         Returns:
-            List of embedding vectors
+            List[List[float]]: List of embedding vectors
         """
+        logger.info("Entering _embed_batch method")
         kwargs = {"dimensions": self.dimensions} if self.dimensions else {}
         
         # Use OpenAI embeddings API
@@ -136,6 +138,7 @@ class EmbeddingGenerator:
         
         # Extract and return the embeddings
         embeddings = [item.embedding for item in response.data]
+        logger.info("Exiting _embed_batch method")
         return embeddings
 
     def _normalize_vector(self, vector: List[float]) -> List[float]:
@@ -143,16 +146,19 @@ class EmbeddingGenerator:
         Normalize a vector to unit length.
 
         Args:
-            vector: Input vector
+            vector (List[float]): Input vector
 
         Returns:
-            Normalized vector
+            List[float]: Normalized vector
         """
+        logger.info("Entering _normalize_vector method")
         array = np.array(vector)
         norm = np.linalg.norm(array)
         if norm > 0:
             normalized = array / norm
+            logger.info("Exiting _normalize_vector method")
             return normalized.tolist()
+        logger.info("Exiting _normalize_vector method")
         return vector
 
     async def similarity_score(
@@ -165,13 +171,14 @@ class EmbeddingGenerator:
         Calculate similarity between two texts.
 
         Args:
-            text1: First text
-            text2: Second text
-            method: Similarity method ('cosine', 'dot', or 'euclidean')
+            text1 (str): First text
+            text2 (str): Second text
+            method (str): Similarity method ('cosine', 'dot', or 'euclidean')
 
         Returns:
-            Similarity score between 0 and 1
+            float: Similarity score between 0 and 1
         """
+        logger.info("Entering similarity_score method")
         embeddings = await self.get_embeddings([text1, text2])
         
         if len(embeddings) != 2:
@@ -183,14 +190,17 @@ class EmbeddingGenerator:
         if method == "cosine":
             # Cosine similarity: dot(v1, v2) / (||v1|| * ||v2||)
             # Since vectors are normalized, this is just the dot product
+            logger.info("Exiting similarity_score method")
             return float(np.dot(vec1, vec2))
         elif method == "dot":
             # Dot product
+            logger.info("Exiting similarity_score method")
             return float(np.dot(vec1, vec2))
         elif method == "euclidean":
             # Euclidean distance converted to similarity (0-1)
             distance = np.linalg.norm(vec1 - vec2)
             # Convert distance to similarity (closer to 1 means more similar)
+            logger.info("Exiting similarity_score method")
             return float(1.0 / (1.0 + distance))
         else:
             raise ValueError(f"Unknown similarity method: {method}")

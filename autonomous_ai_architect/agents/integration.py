@@ -10,7 +10,7 @@ result processing.
 import asyncio
 import json
 import logging
-from typing import Dict, List, Any, Optional, Union
+from typing import Dict, List, Any, Optional
 
 from autonomous_ai_architect.agents.main_crew import AgentOrchestrator
 from autonomous_ai_architect.core.knowledge_base import KnowledgeBase
@@ -35,10 +35,11 @@ class AgentIntegration:
         Initialize the agent integration.
         
         Args:
-            redis_url: Redis connection URL
-            knowledge_base: Knowledge base instance
-            config: Additional configuration parameters
+            redis_url (str): Redis connection URL
+            knowledge_base (Optional[KnowledgeBase]): Knowledge base instance
+            config (Optional[Dict[str, Any]]): Additional configuration parameters
         """
+        logger.info("Initializing AgentIntegration")
         self.config = config or {}
         self.orchestrator = AgentOrchestrator(
             redis_url=redis_url,
@@ -51,19 +52,22 @@ class AgentIntegration:
         Execute a single task with error handling and recovery.
         
         Args:
-            task: Task definition including type and parameters
+            task (Dict[str, Any]): Task definition including type and parameters
             
         Returns:
-            Task execution results
+            Dict[str, Any]: Task execution results
         """
+        logger.info(f"Executing task: {task}")
         max_retries = self.config.get("max_retries", 3)
         retry_delay = self.config.get("retry_delay", 5)  # seconds
         
         for attempt in range(max_retries):
             try:
+                logger.info(f"Attempt {attempt+1} for task: {task}")
                 result = await self.orchestrator.process_task(task)
                 
                 if result.get("status") == "success":
+                    logger.info(f"Task succeeded: {result}")
                     return result
                 else:
                     logger.warning(
@@ -76,6 +80,7 @@ class AgentIntegration:
                     if attempt < max_retries - 1:
                         await asyncio.sleep(retry_delay)
                     else:
+                        logger.error(f"Task failed after {max_retries} attempts: {result.get('error')}")
                         return {
                             "error": f"Failed after {max_retries} attempts: {result.get('error')}",
                             "status": "failure",
@@ -87,6 +92,7 @@ class AgentIntegration:
                 if attempt < max_retries - 1:
                     await asyncio.sleep(retry_delay)
                 else:
+                    logger.error(f"Exception after {max_retries} attempts: {str(e)}")
                     return {
                         "error": f"Exception after {max_retries} attempts: {str(e)}",
                         "status": "failure"
@@ -97,14 +103,16 @@ class AgentIntegration:
         Execute a sequence of tasks as a workflow.
         
         Args:
-            tasks: List of task definitions
+            tasks (List[Dict[str, Any]]): List of task definitions
             
         Returns:
-            List of task execution results
+            List[Dict[str, Any]]: List of task execution results
         """
+        logger.info(f"Executing workflow with {len(tasks)} tasks")
         results = []
         
         for task in tasks:
+            logger.info(f"Executing task in workflow: {task}")
             task_result = await self.execute_task(task)
             results.append(task_result)
             
@@ -123,11 +131,12 @@ class AgentIntegration:
         Execute tasks using a CrewAI crew for collaborative execution.
         
         Args:
-            tasks: List of task definitions
+            tasks (List[Dict[str, Any]]): List of task definitions
             
         Returns:
-            Crew execution results
+            Dict[str, Any]: Crew execution results
         """
+        logger.info(f"Executing crew with {len(tasks)} tasks")
         try:
             return await self.orchestrator.create_crew(tasks)
         except Exception as e:
@@ -139,6 +148,7 @@ class AgentIntegration:
             
     async def close(self):
         """Clean up resources."""
+        logger.info("Closing agent integration")
         await self.orchestrator.close()
         
 # Example usage
